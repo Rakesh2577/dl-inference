@@ -6,11 +6,13 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+find_package(OpenCV REQUIRED)
 
 add_executable(dl_inference main.cpp)
 
 target_include_directories(dl_inference PRIVATE
     /opt/homebrew/include/onnxruntime
+    /opt/homebrew/opt/opencv/include/opencv4
 )
 
 target_link_directories(dl_inference PRIVATE
@@ -19,4 +21,5 @@ target_link_directories(dl_inference PRIVATE
 
 target_link_libraries(dl_inference PRIVATE
     onnxruntime
+    ${OpenCV_LIBS}
 )

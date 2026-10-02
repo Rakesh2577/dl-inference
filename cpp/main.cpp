@@ -1,4 +1,5 @@
 #include <onnxruntime_cxx_api.h>
+#include <opencv2/opencv.hpp>
 
 #include <chrono>
 #include <iostream>
@@ -20,7 +21,28 @@ int main()
 
     size_t input_size = 1 * 3 * 224 * 224;
 
-    std::vector<float> input_data(input_size, 0.5f);
+    cv::Mat image = cv::imread("../Image.jpg");
+    if (image.empty())
+    {
+        std::cerr << "Failed to load image\n";
+        return 1;
+    }
+    cv::resize(image, image, cv::Size(224, 224));
+    cv::cvtColor(image, image, cv::COLOR_BGR2RGB);
+    image.convertTo(image, CV_32FC3, 1.0 / 255.0);
+
+    std::vector<float> input_data(input_size);
+    int c = 0,h = 0,w = 0;
+    for (c = 0; c < 3; ++c)
+    {
+        for (h = 0; h < 224; ++h)
+        {
+            for (w = 0; w < 224; ++w)
+            {
+                input_data[c * 224 * 224 + h * 224 + w] = image.at<cv::Vec3f>(h, w)[c];
+            }
+        }
+    }
 
     Ort::MemoryInfo memory_info(
         "Cpu",
@@ -79,10 +101,32 @@ int main()
 
     double average_ms = total_ms / iterations;
 
+    auto output = session.Run(
+        Ort::RunOptions{nullptr},
+        &input_name,
+        &input_tensor,
+        1,
+        &output_name,
+        1
+    );
+
+    float* output_data = output[0].GetTensorMutableData<float>();
+
+    int predicted_class = 0;
+
+    for (int i = 1; i < 1000; ++i)
+    {
+        if (output_data[i] > output_data[predicted_class])
+        {
+            predicted_class = i;
+        }
+    }
+
     std::cout << "Input shape: [1, 3, 224, 224]\n";
     std::cout << "Output shape: [1, 1000]\n";
     std::cout << "Threads: " << num_threads << "\n";
     std::cout << "Average inference latency: "<< average_ms << " ms\n";
-
+    std::cout << "Predicted class index: " << predicted_class << "\n";
+    
     return 0;
 }

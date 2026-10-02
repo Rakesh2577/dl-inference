@@ -50,7 +50,7 @@ The output contains scores for 1000 classes.
 
 ## Python Inference
 
-First I loaded the image and converted it into the format required by the model.
+First I loaded the image and converted it into the format required by the model.I used OpenCV for image preprocessing so that the Python and C++ preprocessing are the same.
 
 The preprocessing steps were:
 
@@ -65,6 +65,8 @@ Then I passed the tensor to ONNX Runtime and got the output tensor.
 
 The model predicted a class index from the output.
 
+For my test image, the predicted class index was: 627
+
 ## Benchmarking
 
 I measured only the model inference time using `session.run()`.
@@ -74,7 +76,7 @@ I used warm-up iterations before measuring the latency.
 The Python inference latency was around:
 
 ```text
-2.3 ms
+2.5 ms
 ```
 
 The exact value can vary between runs.
@@ -99,7 +101,7 @@ This helped me understand that the model is doing a lot of computation inside co
 
 I then implemented the inference part in C++ using ONNX Runtime.
 
-I created the input tensor directly in C++ and passed it to the same MobileNetV2 ONNX model.
+I used OpenCV for image preprocessing and then created the input tensor in C++ and passed it to the same MobileNetV2 ONNX model.
 
 The C++ program uses:
 
@@ -108,6 +110,8 @@ The C++ program uses:
 * CMake
 * CPU execution
 * Intra-op threading
+
+The C++ inference also produced the same predicted class:627
 
 ## Thread Experiment
 

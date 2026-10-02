@@ -2,23 +2,20 @@ import time
 
 import numpy as np
 import onnxruntime as ort
-from PIL import Image
-
+import cv2
 
 def preprocess(image_path):
-    image = Image.open(image_path).convert("RGB")
-    image = image.resize((224, 224))
-
-    image = np.array(image).astype(np.float32)
-    image = image / 255.0
+    image = cv2.imread(image_path)
+    image = cv2.resize(image, (224, 224), interpolation=cv2.INTER_LINEAR)
+    image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    image = image.astype(np.float32) / 255.0
     image = np.transpose(image, (2, 0, 1))
     image = np.expand_dims(image, axis=0)
-
     return image
 
 session_options = ort.SessionOptions()
 #session_options.enable_profiling = True
-session_options.intra_op_num_threads = 4
+session_options.intra_op_num_threads = 8
 
 session = ort.InferenceSession(
     "mobilenetv2-12.onnx",
@@ -27,7 +24,7 @@ session = ort.InferenceSession(
 )
 
 input_name = session.get_inputs()[0].name
-input_tensor = preprocess("image.jpg")
+input_tensor = preprocess("Image.jpg")
 
 
 for _ in range(10):
@@ -45,9 +42,14 @@ end = time.perf_counter()
 
 latency_ms = ((end - start) / iterations) * 1000
 
+output = session.run(None, {input_name: input_tensor})
+predicted_class = np.argmax(output[0][0])
+
+
 print("Average inference latency:", latency_ms, "ms")
+print("Predicted class index:", predicted_class)
 
 
-profile_file = session.end_profiling()
+#profile_file = session.end_profiling()
 
-print("Profile saved to:", profile_file)
+#print("Profile saved to:", profile_file)
